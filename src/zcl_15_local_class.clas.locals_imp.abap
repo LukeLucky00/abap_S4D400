@@ -27,11 +27,27 @@ CLASS lcl_connection DEFINITION.
 
     DATA details TYPE st_details.
 
+    TYPES:
+      BEGIN OF st_airport,
+        AirportId TYPE /dmo/airport_id,
+        Name      TYPE /dmo/airport_name,
+      END OF st_airport.
+
+    TYPES tt_airports TYPE STANDARD TABLE OF st_airport WITH NON-UNIQUE DEFAULT KEY.
+
+
+    CLASS-DATA airports TYPE tt_airports.
+
 ENDCLASS.
+
 
 CLASS lcl_connection IMPLEMENTATION.
 
   METHOD get_output.
+
+    DATA(departure) = airports[ airportid = details-departureairport ].
+    Data(destination) = airports[ airportid = details-destinationairport ].
+
     APPEND |Carrier Id: { carrier_id }| TO r_output.
     APPEND |Connection Id: { connection_id }| TO r_output.
 *    APPEND |Airport from id: { airport_from_id }| TO r_output.
@@ -41,6 +57,8 @@ CLASS lcl_connection IMPLEMENTATION.
     APPEND |Airport from id: { details-DepartureAirport }| TO r_output.
     APPEND |Airport to id: { details-DestinationAirport }| TO r_output.
     APPEND |carrier name: { details-airlinename }| TO r_output.
+    APPEND |departure name: { departure-name }| TO r_output.
+    APPEND |destination name: { destination-name }| TO r_output.
 
   ENDMETHOD.
 
@@ -77,6 +95,8 @@ CLASS lcl_connection IMPLEMENTATION.
     WHERE AirlineID    = @i_carrier_id
       AND ConnectionID = @i_connection_id
     INTO CORRESPONDING FIELDS OF @details.
+
+    SELECT FROM /DMO/I_Airport FIELDS AirportID, Name INTO TABLE @airports.
 
     IF sy-subrc <> 0.
       RAISE EXCEPTION NEW cx_abap_invalid_value( ).
